@@ -136,9 +136,9 @@ with col_left:
     st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
     
     with st.expander("⊚ Production Data"):
-        st.markdown('<a href= "/absen" target="_blank" class="nav-link">≫ Data Absen </a>', unsafe_allow_html=True)
-        st.markdown('<a href= "https://docs.google.com/spreadsheets/d/1NNVyaEJfiEKLNwoOsusYcGF4q_nQonBu/edit?usp=drive_link&ouid=117491108448694901071&rtpof=true&sd=true" target="_blank" class="nav-link">≫ Data Quality </a>', unsafe_allow_html=True)            
-        st.markdown('<a href= "" target="_blank" class="nav-link">≫ Data eff </a>', unsafe_allow_html=True)
+        st.markdown('<a href= "/absen" target="_blank" class="nav-link">≫ Data Absen (on progresss) </a>', unsafe_allow_html=True)
+        st.markdown('<a href= "https://docs.google.com/spreadsheets/d/1NNVyaEJfiEKLNwoOsusYcGF4q_nQonBu/edit?usp=drive_link&ouid=117491108448694901071&rtpof=true&sd=true" target="_blank" class="nav-link">≫ Data Quality (waitng) </a>', unsafe_allow_html=True)            
+        st.markdown('<a href= "" target="_blank" class="nav-link">≫ Data eff (waiting) </a>', unsafe_allow_html=True)
 
     with st.expander("⊚ Development Data"):
         st.markdown('<a href= "https://drive.google.com/drive/folders/1ZAUgV0S5w9_3ujglIPyckG5MUX9KROv0?usp=sharing" target="_blank" class="nav-link">≫ Sample </a>', unsafe_allow_html=True)
