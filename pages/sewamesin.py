@@ -145,6 +145,8 @@ try:
     df_table['Qty'] = df_table['Qty'].astype(str) + " Unit"
     df_table['Sisa'] = df_table['Sisa'].astype(str) + " Hari"
     df_table = df_table.rename(columns={'Sisa': 'Sisa Hari'})
+    df_table['Start_Sewa'] = pd.to_datetime(df_table['Start_Sewa']).dt.strftime('%d/%m/%Y')
+    df_table['Akhir_Sewa'] = pd.to_datetime(df_table['Akhir_Sewa']).dt.strftime('%d/%m/%Y')
 
     # Terapkan warna hanya di kolom Sisa Hari agar tidak merusak format tanggal
     styled_df = df_table.style.applymap(color_sisa_only, subset=['Sisa Hari'])
@@ -198,5 +200,6 @@ try:
 
 except Exception as e:
     st.error(f"❌ Kesalahan: {e}")
+
 
 
