@@ -63,7 +63,7 @@ st.markdown("""
 col_judul, col_back = st.columns([4, 1])
 
 # 3. KONEKSI DATA
-url_sheets = "https://docs.google.com/spreadsheets/d/1D2fWEf08Oks6XFvz5KBgHHUjxJiM38Z0/edit?usp=sharing"
+url_sheets = "https://docs.google.com/spreadsheets/d/1BvYyCa0DgJrjuMYQzFEL_49_StYhr71rzvNJ8crwHaU/edit?usp=sharing"
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 @st.cache_data(ttl=60)
@@ -200,6 +200,7 @@ try:
 
 except Exception as e:
     st.error(f"❌ Kesalahan: {e}")
+
 
 
 
