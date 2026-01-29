@@ -107,15 +107,37 @@ def get_base64_logo(url):
 @st.cache_data
 def load_data():
     try:
+        # Link CSV dari Google Sheets Anda
         SHEET_URL = "https://docs.google.com/spreadsheets/d/1D2fWEf08Oks6XFvz5KBgHHUjxJiM38Z0/export?format=csv"
-        df_raw = pd.read_csv(SHEET_URL)
-        df_raw.columns = df_raw.iloc[1] 
-        df_clean = df_raw.iloc[2:].reset_index(drop=True)
+        
+        # Baca semua data tanpa header terlebih dahulu
+        df_raw = pd.read_csv(SHEET_URL, header=None)
+        
+        # Cari di baris mana kata 'Final Grade' berada untuk menentukan header
+        header_row_index = 0
+        for i, row in df_raw.iterrows():
+            if 'Final Grade' in row.values:
+                header_row_index = i
+                break
+        
+        # Tetapkan baris tersebut sebagai header dan ambil data di bawahnya
+        df_raw.columns = df_raw.iloc[header_row_index]
+        df_clean = df_raw.iloc[header_row_index + 1:].reset_index(drop=True)
+        
+        # Bersihkan spasi di nama kolom
+        df_clean.columns = df_clean.columns.str.strip()
+        
         SELECTED_COLUMNS = ['SPV', 'Line', 'Name Opt', 'ID NO', 'Style', 'Process Part', 'Name Process (Bahasa)', 'Grade Process', 'Grade Countif', 'Grade Quality', 'Final Grade']
+        
+        # Filter hanya kolom yang ada
         df_final = df_clean[[c for c in SELECTED_COLUMNS if c in df_clean.columns]].copy()
-        df_final = df_final.dropna(subset=['Name Process (Bahasa)'], how='all').reset_index(drop=True)
+        
+        # Hapus baris yang kosong pada kolom kunci
+        df_final = df_final.dropna(subset=['Name Opt'], how='all').reset_index(drop=True)
+        
         return df_final
-    except Exception:
+    except Exception as e:
+        st.error(f"Gagal memuat data: {e}")
         return pd.DataFrame()
 
 # ==========================================
@@ -225,3 +247,4 @@ try:
         
 except Exception as e:
     st.error(f"Terjadi Kesalahan: {e}")
+
