@@ -143,7 +143,7 @@ with col_left:
         st.markdown('<a href= "" target="_blank" class="nav-link">≫ COPT Line (waiting) </a>', unsafe_allow_html=True)
 
     with st.expander("⊚ Development Data"):
-        st.markdown('<a href= "https://drive.google.com/drive/folders/1ZAUgV0S5w9_3ujglIPyckG5MUX9KROv0?usp=sharing" target="_blank" class="nav-link">≫ Sample </a>', unsafe_allow_html=True)
+        st.markdown('<a href= "https://drive.google.com/drive/folders/1ZAUgV0S5w9_3ujglIPyckG5MUX9KROv0?usp=sharing" target="_blank" class="nav-link">≫ Video Training </a>', unsafe_allow_html=True)
     
     with st.expander("⊚ Matrix Skill"):
         st.markdown('<a href="/skillmatrix" target="_blank" class="nav-link">≫ Skill Matrix ISG apk</a>', unsafe_allow_html=True)
