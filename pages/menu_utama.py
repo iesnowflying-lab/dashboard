@@ -111,7 +111,7 @@ def get_efficiency_dataframe(url):
         return pd.DataFrame(all_sheets_data)
     except: return pd.DataFrame()
 
-df_final = get_efficiency_dataframe("https://docs.google.com/spreadsheets/d/1LL9i3DpNL4hxAPivU1Ate4zUf4Be3WeU/edit")
+df_final = get_efficiency_dataframe("https://docs.google.com/spreadsheets/d/1QN-kgqHSOAcnYqNLXAkfl7sLeT64Qt9p/edit")
 
 # --- HEADER ---
 t1, t2 = st.columns([1.1, 2.6], gap="small")
