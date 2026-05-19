@@ -239,7 +239,7 @@ try:
                 return ''
 
             df_final_view = df_filt_calc.fillna("")
-            styled_df = df_final_view.style.applymap(apply_color_grade, subset=['Final Grade'])
+            styled_df = df_final_view.style.map(apply_color_grade, subset=['Final Grade'])
             st.dataframe(styled_df, use_container_width=True, hide_index=True)
         
     else:
