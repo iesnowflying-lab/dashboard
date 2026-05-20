@@ -237,7 +237,7 @@ if not df_raw.empty:
                 
                 st.markdown(f"""
                 <div class="insight-card-terendah">
-                    🔹 <b>STYLE DENGAN COPT TERENDAH :</b> {style_min_isg} ({val_min_isg} Min)
+                    🔹 <b>STYLE DENGAN COPT TERCEPAT :</b> {style_min_isg} ({val_min_isg} Min)
                 </div>
                 <div class="insight-card-terbesar">
                     🔺 <b>STYLE DENGAN COPT TERLAMA :</b> {style_max_isg} ({val_max_isg} Min)
@@ -314,7 +314,7 @@ if not df_raw.empty:
                 
                 st.markdown(f"""
                 <div class="insight-card-terendah">
-                    🔹 <b>STYLE DENGAN COPT TERENDAH :</b> {style_min_irg} ({val_min_irg} Min)
+                    🔹 <b>STYLE DENGAN COPT TERCEPAT :</b> {style_min_irg} ({val_min_irg} Min)
                 </div>
                 <div class="insight-card-terbesar">
                     🔺 <b>STYLE DENGAN COPT TERLAMA :</b> {style_max_irg} ({val_max_irg} Min)
