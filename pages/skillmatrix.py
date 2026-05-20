@@ -104,23 +104,20 @@ def load_data():
         df_clean = df_raw.iloc[header_row_index + 1:].reset_index(drop=True)
         df_clean.columns = df_clean.columns.str.strip()
         
-        # Kolom yang akan diambil
-        SELECTED_COLUMNS = ['SPV', 'Line', 'Name Opt', 'ID NO', 'Style', 'Process Part', 'Name Process (Bahasa)', 'Grade Process', 'Grade Countif', 'Grade Quality', 'Final Grade']
+        # --- PERBAIKAN: Memasukkan kolom 'Building' ke dalam list ---
+        SELECTED_COLUMNS = ['Building', 'SPV', 'Line', 'Name Opt', 'ID NO', 'Style', 'Process Part', 'Name Process (Bahasa)', 'Grade Process', 'Grade Countif', 'Grade Quality', 'Final Grade']
         df_final = df_clean[[c for c in SELECTED_COLUMNS if c in df_clean.columns]].copy()
         
         # --- PERBAIKAN AKURASI DATA ---
-        # 1. Hapus baris yang benar-benar kosong
         df_final = df_final.dropna(subset=['Name Opt', 'ID NO'], how='all')
         
-        # 2. Bersihkan spasi liar di ID NO agar drop_duplicates akurat
         df_final['ID NO'] = df_final['ID NO'].astype(str).str.strip()
         df_final['Name Opt'] = df_final['Name Opt'].astype(str).str.strip()
         
-        # 3. Lakukan ffill untuk merged cells
-        cols_to_fill = ['SPV', 'Line', 'Name Opt', 'ID NO', 'Final Grade']
+        # --- PERBAIKAN: Menambahkan 'Building' ke proses ffill ---
+        cols_to_fill = ['Building', 'SPV', 'Line', 'Name Opt', 'ID NO', 'Final Grade']
         df_final[cols_to_fill] = df_final[cols_to_fill].ffill()
         
-        # 4. Filter lagi untuk memastikan tidak ada ID NO yang aneh (seperti "nan")
         df_final = df_final[df_final['ID NO'] != 'nan']
         
         return df_final
@@ -147,19 +144,40 @@ try:
     if not df_logic.empty:
         # --- FILTER PANEL ---
         with st.expander("🔍 Filter Pencarian Cepat", expanded=True):
-            f1, f2, f3, f4 = st.columns(4)
+            # Mengubah layout kolom menjadi 5 untuk mengakomodasi filter Building
+            f0, f1, f2, f3, f4 = st.columns(5)
+            
+            with f0:
+                # Ambil daftar unik Building untuk selectbox
+                buildings_list = sorted([str(b) for b in df_logic['Building'].unique() if pd.notna(b)])
+                sel_building = st.selectbox("Building:", ["Semua"] + buildings_list)
+            
             with f1: s_name = st.text_input("Nama:")
             with f2: s_id = st.text_input("ID NO:")
+            
             with f3:
-                df_logic['Line'] = pd.to_numeric(df_logic['Line'], errors='coerce')
-                lines_list = sorted(df_logic['Line'].dropna().unique().astype(int))
+                # PERBAIKAN: Pilihan Line akan dinamis tergantung Building yang dipilih
+                if sel_building != "Semua":
+                    df_line_filtered = df_logic[df_logic['Building'] == sel_building].copy()
+                else:
+                    df_line_filtered = df_logic.copy()
+                    
+                df_line_filtered['Line'] = pd.to_numeric(df_line_filtered['Line'], errors='coerce')
+                lines_list = sorted(df_line_filtered['Line'].dropna().unique().astype(int))
                 sel_line = st.selectbox("Line:", ["Semua"] + [str(l) for l in lines_list])
+                
             with f4:
-                spvs = sorted([str(s) for s in df_logic['SPV'].unique() if pd.notna(s)])
+                # SPV juga disaring berdasarkan Building yang dipilih agar lebih akurat
+                if sel_building != "Semua":
+                    df_spv_filtered = df_logic[df_logic['Building'] == sel_building]
+                else:
+                    df_spv_filtered = df_logic
+                spvs = sorted([str(s) for s in df_spv_filtered['SPV'].unique() if pd.notna(s)])
                 sel_spv = st.selectbox("SPV:", ["Semua"] + spvs)
 
         # --- APPLY FILTERS ---
         mask = pd.Series([True] * len(df_logic))
+        if sel_building != "Semua": mask &= df_logic['Building'] == sel_building
         if s_name: mask &= df_logic['Name Opt'].str.contains(s_name, case=False, na=False)
         if s_id: mask &= df_logic['ID NO'].str.contains(s_id, case=False, na=False)
         if sel_line != "Semua": mask &= df_logic['Line'].astype(str) == str(sel_line)
@@ -199,6 +217,8 @@ try:
 
             # ROW 2: BAR CHART
             st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Modifikasi Groupby agar visualisasi chart tetap rapi saat berganti gedung
             line_data = df_unique.groupby(['Line', 'Final Grade']).size().reset_index(name='Count')
             line_total = df_unique.groupby('Line').size().reset_index(name='Total')
             line_data = line_data.merge(line_total, on='Line')
@@ -222,7 +242,6 @@ try:
                           'D': 'background-color: #fee2e2; color: #991b1b;'}
                 return colors.get(val, '')
 
-            # PERBAIKAN: Menggunakan .map() bukan .applymap()
             df_final_view = df_filtered.fillna("")
             styled_df = df_final_view.style.map(apply_color_grade, subset=['Final Grade'])
             st.dataframe(styled_df, use_container_width=True, hide_index=True)
