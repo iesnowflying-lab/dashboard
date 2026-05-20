@@ -156,7 +156,7 @@ if not df_raw.empty:
         df_filtered_base = df_display[df_display['Month'] != 'nan'].copy()
 
         # URUTAN KRONOLOGIS BULAN: Memastikan urutan menyambung dari tahun sebelumnya
-        sort_order = ['September', 'October', 'November', 'December', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August']
+        sort_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August','September', 'October', 'November', 'December']
 
         def get_sort_index(month_str):
             cleaned = str(month_str).strip()
