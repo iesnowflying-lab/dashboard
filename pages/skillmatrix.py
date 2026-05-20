@@ -104,25 +104,25 @@ def load_data():
         df_clean = df_raw.iloc[header_row_index + 1:].reset_index(drop=True)
         df_clean.columns = df_clean.columns.str.strip()
         
-        # Kolom yang akan diambil dari database
+        # Kolom yang diambil dari database
         SELECTED_COLUMNS = ['Building', 'SPV', 'Line', 'Name Opt', 'ID NO', 'Style', 'Process Part', 'Name Process (Bahasa)', 'Grade Process', 'Grade Countif', 'Grade Quality', 'Final Grade']
         df_final = df_clean[[c for c in SELECTED_COLUMNS if c in df_clean.columns]].copy()
         
-        # --- PERBAIKAN AKURASI & URUTAN DATA ---
-        # 1. Lakukan ffill TERLEBIH DAHULU agar baris kosong pada merged cells (termasuk Building) terisi data induknya
+        # --- PERBAIKAN URUTAN DATA MERGED CELLS ---
+        # 1. Jalankan ffill terlebih dahulu agar data induk 'Building' terisi penuh ke bawah
         cols_to_fill = ['Building', 'SPV', 'Line', 'Name Opt', 'ID NO', 'Final Grade']
         df_final[cols_to_fill] = df_final[cols_to_fill].ffill()
         
-        # 2. Setelah ffill aman, baru hapus baris sisa yang benar-benar tidak ada nama/ID operatornya
+        # 2. Hapus baris sisa yang benar-benar tidak ada operatornya
         df_final = df_final.dropna(subset=['Name Opt', 'ID NO'], how='all')
         
-        # 3. Bersihkan spasi liar di data teks agar pencarian akurat
+        # 3. Standardisasi string data teks
         df_final['ID NO'] = df_final['ID NO'].astype(str).str.strip()
         df_final['Name Opt'] = df_final['Name Opt'].astype(str).str.strip()
         if 'Building' in df_final.columns:
             df_final['Building'] = df_final['Building'].astype(str).str.strip()
         
-        # 4. Filter akhir untuk membuang sisa teks 'nan' akibat konversi tipe data
+        # 4. Filter akhir membersihkan nilai 'nan' sisa konversi
         df_final = df_final[df_final['ID NO'] != 'nan']
         if 'Building' in df_final.columns:
             df_final = df_final[df_final['Building'] != 'nan']
@@ -154,7 +154,6 @@ try:
             f0, f1, f2, f3, f4 = st.columns(5)
             
             with f0:
-                # Menampilkan daftar Building secara unik dan dinamis
                 if 'Building' in df_logic.columns:
                     buildings_list = sorted([str(b) for b in df_logic['Building'].unique() if b != ''])
                     sel_building = st.selectbox("Building:", ["Semua"] + buildings_list)
@@ -166,7 +165,7 @@ try:
             with f2: s_id = st.text_input("ID NO:")
             
             with f3:
-                # Line disaring berdasarkan Building yang dipilih agar tidak duplikat antar gedung
+                # Filter pilihan line dinamis mengikuti gedung
                 if sel_building != "Semua":
                     df_line_filtered = df_logic[df_logic['Building'] == sel_building].copy()
                 else:
@@ -177,7 +176,7 @@ try:
                 sel_line = st.selectbox("Line:", ["Semua"] + [str(l) for l in lines_list])
                 
             with f4:
-                # SPV disaring berdasarkan Building yang dipilih
+                # Filter pilihan SPV dinamis mengikuti gedung
                 if sel_building != "Semua":
                     df_spv_filtered = df_logic[df_logic['Building'] == sel_building]
                 else:
@@ -225,18 +224,46 @@ try:
                     with (m_col1 if i % 2 == 0 else m_col2):
                         st.metric(label=f"Grade {g}", value=f"{count} Org")
 
-            # ROW 2: BAR CHART
+            # ROW 2: BAR CHART (DINAMIS & TERURUT)
             st.markdown("<br>", unsafe_allow_html=True)
-            line_data = df_unique.groupby(['Line', 'Final Grade']).size().reset_index(name='Count')
-            line_total = df_unique.groupby('Line').size().reset_index(name='Total')
+            
+            # Memastikan Line terbaca sebagai angka agar sorting-nya urut secara numerik
+            df_bar_data = df_unique.copy()
+            df_bar_data['Line'] = pd.to_numeric(df_bar_data['Line'], errors='coerce')
+            df_bar_data = df_bar_data.dropna(subset=['Line'])
+            
+            # Proses pengelompokan (grouping) data untuk grafik batang
+            line_data = df_bar_data.groupby(['Line', 'Final Grade']).size().reset_index(name='Count')
+            line_total = df_bar_data.groupby('Line').size().reset_index(name='Total')
             line_data = line_data.merge(line_total, on='Line')
+            
+            # Mengurutkan berdasarkan nomor Line asli (1, 2, 3... dst)
+            line_data = line_data.sort_values(by='Line')
+            
             line_data['Percent'] = (line_data['Count'] / line_data['Total'] * 100).round(1)
             line_data['Line_Label'] = "Line " + line_data['Line'].astype(int).astype(str)
             line_data['Bar_Label'] = line_data.apply(lambda x: f"{x['Final Grade']}: {x['Percent']}%", axis=1)
 
-            fig_bar = px.bar(line_data, x='Line_Label', y='Count', color='Final Grade', color_discrete_map=color_map, barmode='stack', text='Bar_Label')
+            # Gambar Chart dengan batasan urutan kategori sumbu X sesuai urutan sorting 'Line_Label'
+            fig_bar = px.bar(
+                line_data, 
+                x='Line_Label', 
+                y='Count', 
+                color='Final Grade', 
+                color_discrete_map=color_map, 
+                barmode='stack', 
+                text='Bar_Label',
+                category_orders={"Line_Label": line_data['Line_Label'].unique()}
+            )
             fig_bar.update_traces(textposition='inside', textfont=dict(color='white'))
-            fig_bar.update_layout(height=400, showlegend=False, xaxis={'title': None, 'tickfont': {'color': 'white'}}, yaxis={'visible': False}, plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+            fig_bar.update_layout(
+                height=400, 
+                showlegend=False, 
+                xaxis={'title': None, 'tickfont': {'color': 'white'}}, 
+                yaxis={'visible': False}, 
+                plot_bgcolor='rgba(0,0,0,0)', 
+                paper_bgcolor='rgba(0,0,0,0)'
+            )
             st.plotly_chart(fig_bar, use_container_width=True)
 
             # ROW 3: DETAIL DATA
