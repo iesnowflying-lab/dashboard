@@ -148,6 +148,7 @@ with col_left:
     with st.expander("⊚ Matrix Skill"):
         st.markdown('<a href="/skillmatrix" target="_blank" class="nav-link">≫ Skill Matrix apk</a>', unsafe_allow_html=True)
         st.markdown('<a href="/gradelineisg" target="_blank" class="nav-link">≫ Grade Line ISG </a>', unsafe_allow_html=True)
+        st.markdown('<a href="/skillmatrix" target="_blank" class="nav-link">≫ Skill Matrix Dashboard</a>', unsafe_allow_html=True)
 
     with st.expander("⊚ Machine"):
         st.markdown('<a href="/sewamesin" target="_blank" class="nav-link">≫ Monitoring Sewa</a>', unsafe_allow_html=True)
