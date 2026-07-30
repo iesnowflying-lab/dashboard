@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.express as px
 import requests
 import base64
+import io
+import time
+from streamlit_autorefresh import st_autorefresh
 
 # ==========================================
 # 1. KONFIGURASI HALAMAN
@@ -88,11 +91,26 @@ def get_base64_logo(url):
     except Exception:
         return ""
 
-@st.cache_data
+@st.cache_data(ttl=60, show_spinner=False)
 def load_data():
     try:
-        SHEET_URL = "https://docs.google.com/spreadsheets/d/1D2fWEf08Oks6XFvz5KBgHHUjxJiM38Z0/export?format=csv"
-        df_raw = pd.read_csv(SHEET_URL, header=None)
+        cache_bust = int(time.time() // 60)
+        SHEET_URL = (
+            "https://docs.google.com/spreadsheets/d/"
+            "1D2fWEf08Oks6XFvz5KBgHHUjxJiM38Z0/"
+            f"export?format=csv&sheet=DATA&cache_bust={cache_bust}"
+        )
+        response = requests.get(
+            SHEET_URL,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        df_raw = pd.read_csv(io.StringIO(response.text), header=None)
         
         header_row_index = 0
         for i, row in df_raw.iterrows():
@@ -145,6 +163,16 @@ st.markdown(f'<div class="custom-header"><div class="title-text">Skill Matrix Da
 # ==========================================
 # 4. MAIN LOGIC
 # ==========================================
+st_autorefresh(interval=60_000, key="skillmatrix_auto_refresh")
+
+refresh_col, info_col = st.columns([1, 5])
+with refresh_col:
+    if st.button("🔄 Refresh Data", use_container_width=True):
+        load_data.clear()
+        st.rerun()
+with info_col:
+    st.caption("Data otomatis diperiksa ulang setiap 60 detik dari sheet DATA.")
+
 try:
     df_logic = load_data()
     
