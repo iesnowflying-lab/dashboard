@@ -4,6 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import requests
 import io
+import time
+from streamlit_autorefresh import st_autorefresh
 
 # ==========================================
 # 1. KONFIGURASI HALAMAN & CSS GRADIENT
@@ -84,22 +86,35 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# Rerun halaman tiap 60 detik agar perubahan file Drive ikut terbaca.
+st_autorefresh(interval=60 * 1000, key="coptmonth_auto_refresh")
+
 # ==========================================
 # 2. DATA LOADER (MURNI DARI DRIVE)
 # ==========================================
-@st.cache_data
+@st.cache_data(ttl=55, show_spinner=False)
 def load_raw_data():
     try:
         FILE_ID = "1TJHsdyAyAtX1yminIF6-z8UPBcvjVuJT"
-        DOWNLOAD_URL = f"https://drive.google.com/uc?export=download&id={FILE_ID}"
-        
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(DOWNLOAD_URL, headers=headers, timeout=15)
-        
+
+        # Parameter timestamp mencegah respons lama tersimpan di cache perantara Google/CDN.
+        DOWNLOAD_URL = (
+            "https://drive.google.com/uc"
+            f"?export=download&id={FILE_ID}&_={int(time.time())}"
+        )
+
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+        response = requests.get(DOWNLOAD_URL, headers=headers, timeout=30)
+
         if response.status_code != 200:
             st.error(f"Gagal mengunduh file. Status Code: {response.status_code}")
             return pd.DataFrame()
-            
+
         df = pd.read_excel(io.BytesIO(response.content), sheet_name="REKAP COPT")
         return df
     except Exception as e:
@@ -127,8 +142,14 @@ if not df_raw.empty:
             'Avg COPT_Internal': df_raw.iloc[:, 9]
         }).copy()
         
-        # Mengisi baris kosong akibat merged cells bawaan Excel
-        df_display = df_display.ffill()
+        # Buang baris pemisah/placeholder yang tidak mempunyai Style.
+        # Ini mencegah baris kosong seperti penanda "ISG_June" berubah menjadi
+        # duplikat baris sebelumnya saat dilakukan forward-fill.
+        df_display = df_display.dropna(subset=['Style']).copy()
+
+        # Forward-fill hanya untuk kolom induk yang mungkin berasal dari merged cells.
+        # Jangan ffill seluruh kolom karena Line/Style/COPT dapat menjadi data palsu.
+        df_display[['Building', 'Month']] = df_display[['Building', 'Month']].ffill()
         
         # --- STANDARISASI DATA TEKS ---
         df_display['Building'] = df_display['Building'].astype(str).str.strip().str.upper()
@@ -148,12 +169,13 @@ if not df_raw.empty:
         # FORMATTING: Mengunci kolom COPT x SMV agar selalu 2 digit di belakang koma
         df_display['COPT x SMV'] = df_display['COPT x SMV'].round(2)
             
-        # Hapus baris sisa di bagian bawah tabel
-        df_display = df_display.dropna(subset=['Style'])
-        df_display = df_display[~df_display['Style'].isin(['nan', '', '-'])]
+        # Hapus sisa nilai teks kosong setelah standardisasi.
+        df_display = df_display[~df_display['Style'].str.lower().isin(['nan', 'none', '', '-'])]
 
-        # Bersihkan baris bulan jika ada text 'nan'
-        df_filtered_base = df_display[df_display['Month'] != 'nan'].copy()
+        # Bersihkan baris yang tidak mempunyai bulan valid.
+        df_filtered_base = df_display[
+            ~df_display['Month'].str.lower().isin(['nan', 'none', '', '-'])
+        ].copy()
 
         # URUTAN KRONOLOGIS BULAN: Memastikan urutan menyambung dari tahun sebelumnya
         sort_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August','September', 'October', 'November', 'December']
